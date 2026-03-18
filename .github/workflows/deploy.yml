@@ -1,85 +1,62 @@
-name: Deploy React Todo App to EC2
+name: Deploy React Todo App (Standard CI/CD)
 
 on:
   push:
     branches:
-      - master   # trigger on master branch
+      - master
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # ✅ Step 1: Checkout Code
+      # ✅ 1. Checkout Code
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # ✅ Step 2: Setup Node
+      # ✅ 2. Setup Node
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
 
-      # ✅ Step 3: Install & Build
-      - name: Install dependencies and build
+      # ✅ 3. Install & Build (ONLY HERE ✅)
+      - name: Install and Build
         run: |
           npm install
           npm run build
 
-      # ✅ Step 4: Setup SSH
+      # ✅ 4. Setup SSH
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.EC2_KEY }}
 
-      # ✅ Step 5: Deploy to EC2 (Ubuntu Fix Applied)
-      - name: Deploy to EC2
+      # ✅ 5. Copy build to EC2 (IMPORTANT 🔥)
+      - name: Upload build to EC2
+        run: |
+          scp -o StrictHostKeyChecking=no -r build/* ubuntu@3.124.192.180:/home/ubuntu/build/
+
+      # ✅ 6. Deploy on EC2 (NO BUILD HERE ❌)
+      - name: Deploy on EC2
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@3.124.192.180 << 'EOF'
 
-            # Go to correct home directory (Ubuntu)
-            cd /home/ubuntu
-
-            # Install Git if missing
-            if ! command -v git &> /dev/null
-            then
-              echo "Installing Git..."
-              sudo apt update
-              sudo apt install git -y
-            fi
-
-            # Clone repo if not exists
-            if [ ! -d "react-todo-app" ]; then
-              git clone https://github.com/kuldeepdevda70/react-todo-app.git react-todo-app
-            fi
-
-            cd react-todo-app
-
-            # Pull latest code (correct branch)
-            git pull origin master
-
-            # Install Node.js if missing
-            if ! command -v node &> /dev/null
-            then
-              echo "Installing Node.js..."
-              curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
-              sudo apt install -y nodejs
-            fi
-
-            # Install dependencies & build
-            npm install
-            npm run build
-
-            # Install Nginx if missing
+            # Install Nginx if not exists
             if ! command -v nginx &> /dev/null
             then
-              echo "Installing Nginx..."
+              sudo apt update
               sudo apt install nginx -y
             fi
 
-            # Deploy build files
+            # Create build folder if not exists
+            mkdir -p /home/ubuntu/build
+
+            # Clear old files
             sudo rm -rf /var/www/html/*
-            sudo cp -r build/* /var/www/html/
+
+            # Copy new build files
+            sudo cp -r /home/ubuntu/build/* /var/www/html/
 
             # Restart Nginx
             sudo systemctl restart nginx
