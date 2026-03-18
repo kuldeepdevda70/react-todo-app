@@ -36,7 +36,6 @@ jobs:
       - name: Run Tests
         run: |
           npm install
-          
           npm test -- --watchAll=false
 
   deploy:
@@ -54,8 +53,8 @@ jobs:
           ssh-private-key: ${{ secrets.EC2_KEY }}
       - name: Upload Build & Deploy
         run: |
-          scp -o StrictHostKeyChecking=no -r build/* ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/build/
-          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+          scp -o StrictHostKeyChecking=no -r build/* ubuntu@3.124.192.180:/home/ubuntu/build/
+          ssh -o StrictHostKeyChecking=no ubuntu@3.124.192.180 << 'EOF'
             sudo apt update
             sudo apt install nginx -y
             mkdir -p /home/ubuntu/build
