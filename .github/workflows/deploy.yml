@@ -1,67 +1,83 @@
 name: Deploy React Todo App to EC2
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 on:
   push:
     branches:
-      - master   # deploy only when master branch is updated
+      - master   # trigger on master branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout
-       # Step 1: Checkout
+      # ✅ Step 1: Checkout Code
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
-      # Step 2: Setup Node.js
+      # ✅ Step 2: Setup Node
       - name: Setup Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
 
-      # Step 3: Install dependencies and build the React app
+      # ✅ Step 3: Install & Build
       - name: Install dependencies and build
         run: |
-          yarn install
-          yarn build
+          npm install
+          npm run build
 
-      # Step 4: Setup SSH for EC2
+      # ✅ Step 4: Setup SSH
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.EC2_KEY }}
 
-      # Step 5: Deploy to EC2
+      # ✅ Step 5: Deploy to EC2 (Ubuntu Fix Applied)
       - name: Deploy to EC2
         run: |
           ssh -o StrictHostKeyChecking=no ubuntu@3.124.192.180 << 'EOF'
-            
-            # Navigate to project folder
-            cd /home/ec2-user/react-todo-app
 
-            # Check if git is installed, if not install it
+            # Go to correct home directory (Ubuntu)
+            cd /home/ubuntu
+
+            # Install Git if missing
             if ! command -v git &> /dev/null
             then
-              echo "Git not found, installing..."
-              sudo yum install git -y
+              echo "Installing Git..."
+              sudo apt update
+              sudo apt install git -y
             fi
 
-            # Pull latest code
-            git pull origin main
+            # Clone repo if not exists
+            if [ ! -d "react-todo-app" ]; then
+              git clone https://github.com/kuldeepdevda70/react-todo-app.git react-todo-app
+            fi
 
-            # Check if Nginx is installed, if not install it
+            cd react-todo-app
+
+            # Pull latest code (correct branch)
+            git pull origin master
+
+            # Install Node.js if missing
+            if ! command -v node &> /dev/null
+            then
+              echo "Installing Node.js..."
+              curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+              sudo apt install -y nodejs
+            fi
+
+            # Install dependencies & build
+            npm install
+            npm run build
+
+            # Install Nginx if missing
             if ! command -v nginx &> /dev/null
             then
-              echo "Nginx not found, installing..."
-              sudo yum install nginx -y
+              echo "Installing Nginx..."
+              sudo apt install nginx -y
             fi
 
-            # Copy the build folder
+            # Deploy build files
             sudo rm -rf /var/www/html/*
             sudo cp -r build/* /var/www/html/
 
@@ -69,7 +85,3 @@ jobs:
             sudo systemctl restart nginx
 
           EOF
-
-
-
-          
