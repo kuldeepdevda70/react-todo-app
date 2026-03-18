@@ -6,59 +6,60 @@ on:
       - master
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
-      # ✅ 1. Checkout Code
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      # ✅ 2. Setup Node
+      - uses: actions/checkout@v4
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-
-      # ✅ 3. Install & Build (ONLY HERE ✅)
-      - name: Install and Build
+      - name: Install & Build
         run: |
           npm install
           npm run build
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build-files
+          path: build/
 
-      # ✅ 4. Setup SSH
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+      - name: Run Tests
+        run: |
+          npm install
+          npm run lint
+          npm test -- --watchAll=false
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Download Build Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: build-files
+          path: build/
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.EC2_KEY }}
-
-      # ✅ 5. Copy build to EC2 (IMPORTANT 🔥)
-      - name: Upload build to EC2
+      - name: Upload Build & Deploy
         run: |
-          scp -o StrictHostKeyChecking=no -r build/* ubuntu@3.124.192.180:/home/ubuntu/build/
-
-      # ✅ 6. Deploy on EC2 (NO BUILD HERE ❌)
-      - name: Deploy on EC2
-        run: |
-          ssh -o StrictHostKeyChecking=no ubuntu@3.124.192.180 << 'EOF'
-
-            # Install Nginx if not exists
-            if ! command -v nginx &> /dev/null
-            then
-              sudo apt update
-              sudo apt install nginx -y
-            fi
-
-            # Create build folder if not exists
+          scp -o StrictHostKeyChecking=no -r build/* ubuntu@${{ secrets.EC2_HOST }}:/home/ubuntu/build/
+          ssh -o StrictHostKeyChecking=no ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
+            sudo apt update
+            sudo apt install nginx -y
             mkdir -p /home/ubuntu/build
-
-            # Clear old files
             sudo rm -rf /var/www/html/*
-
-            # Copy new build files
             sudo cp -r /home/ubuntu/build/* /var/www/html/
-
-            # Restart Nginx
             sudo systemctl restart nginx
-
           EOF
