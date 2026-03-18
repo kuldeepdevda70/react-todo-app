@@ -1,38 +1,55 @@
-name: Deploy React Todo App (Standard CI/CD)
+name: React Todo App CI/CD
 
 on:
   push:
     branches:
+      - dev
       - master
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Select environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-      - name: Install & Build
+
+      - name: Install Dependencies & Build
         run: |
           npm install
           npm run build
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
-         name: build-files
-         path: build/
+          name: build-files
+          path: build/
 
   test:
     runs-on: ubuntu-latest
     needs: build
     steps:
       - uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
+
       - name: Run Tests
         run: |
           npm install
@@ -47,14 +64,41 @@ jobs:
         with:
           name: build-files
           path: build/
+
+      - name: Determine Environment
+        id: env
+        run: |
+          # Detect branch or manual input
+          ENV_INPUT="${{ github.event.inputs.environment }}"
+          if [ -n "$ENV_INPUT" ]; then
+            ENV="$ENV_INPUT"
+          elif [[ "${GITHUB_REF}" == "refs/heads/dev" ]]; then
+            ENV="dev"
+          elif [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
+            ENV="prod"
+          fi
+          echo "ENV=$ENV" >> $GITHUB_ENV
+
+          # Set HOST dynamically
+          if [ "$ENV" == "dev" ]; then
+            echo "HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
+            SECRET_KEY="DEV_KEY"
+          elif [ "$ENV" == "prod" ]; then
+            echo "HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_ENV
+            SECRET_KEY="PROD_KEY"
+          fi
+          echo "SECRET_KEY=$SECRET_KEY" >> $GITHUB_ENV
+
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.1
         with:
-          ssh-private-key: ${{ secrets.EC2_KEY }}
-      - name: Upload Build & Deploy
+          ssh-private-key: ${{ secrets[env.SECRET_KEY] }}
+
+      - name: Deploy Build to Server
         run: |
-          scp -o StrictHostKeyChecking=no -r build/* ubuntu@3.124.192.180:/home/ubuntu/build/
-          ssh -o StrictHostKeyChecking=no ubuntu@3.124.192.180 << 'EOF'
+          echo "Deploying to $ENV server at $HOST"
+          scp -o StrictHostKeyChecking=no -r build/* ubuntu@$HOST:/home/ubuntu/build/
+          ssh -o StrictHostKeyChecking=no ubuntu@$HOST << 'EOF'
             sudo apt update
             sudo apt install nginx -y
             mkdir -p /home/ubuntu/build
