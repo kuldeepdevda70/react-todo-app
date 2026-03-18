@@ -1,6 +1,5 @@
 name: React Todo App CI/CD
 
-# Trigger on push to dev/master or manual dispatch
 on:
   push:
     branches:
@@ -78,21 +77,22 @@ jobs:
           elif [[ "${GITHUB_REF}" == "refs/heads/master" ]]; then
             ENV="prod"
           fi
-
           echo "ENV=$ENV" >> $GITHUB_ENV
 
-          # Set server host and SSH key dynamically
+          # Set HOST dynamically
           if [ "$ENV" == "dev" ]; then
             echo "HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
-            echo "KEY=${{ secrets.DEV_KEY }}" >> $GITHUB_ENV
+            SECRET_KEY="DEV_KEY"
           elif [ "$ENV" == "prod" ]; then
             echo "HOST=${{ secrets.PROD_HOST }}" >> $GITHUB_ENV
-            echo "KEY=${{ secrets.PROD_KEY }}" >> $GITHUB_ENV
+            SECRET_KEY="PROD_KEY"
+          fi
+          echo "SECRET_KEY=$SECRET_KEY" >> $GITHUB_ENV
 
       - name: Setup SSH
         uses: webfactory/ssh-agent@v0.9.1
         with:
-          ssh-private-key: ${{ env.KEY }}
+          ssh-private-key: ${{ secrets[env.SECRET_KEY] }}
 
       - name: Deploy Build to Server
         run: |
