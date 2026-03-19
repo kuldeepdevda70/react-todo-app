@@ -28,27 +28,26 @@ jobs:
         with:
           node-version: "18"
 
-      - name: Install Dependencies & Build
-        run: |
-          npm install
-          npm run build
+      - name: Install Dependencies
+        run: npm install
 
-      - name: Run Trivy Vulnerability Scan
-        uses: aquasecurity/trivy-action@v0.33.0
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
         with:
-          scan-type: fs
-          vuln-type: "os,library"
-          scan-path: "."
-          format: "json"
-          output: "trivy-report.json"
-          ignore-unfixed: false
-          exit-code: "1"
+          version: v0.69.3
+
+      - name: Run Trivy Scan
+        run: |
+          trivy fs . --format json --output trivy-report.json
 
       - name: Upload Trivy Report
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.json
+
+      - name: Build Project
+        run: npm run build
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -61,12 +60,10 @@ jobs:
     needs: build
     steps:
       - uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-
       - name: Run Tests
         run: |
           npm install
@@ -83,7 +80,6 @@ jobs:
         with:
           name: build-files
           path: build/
-
       - name: Determine Environment
         id: env
         run: |
@@ -96,7 +92,6 @@ jobs:
             ENV="prod"
           fi
           echo "ENV=$ENV" >> $GITHUB_ENV
-
           if [ "$ENV" == "dev" ]; then
             echo "HOST=${{ secrets.DEV_HOST }}" >> $GITHUB_ENV
             SECRET_KEY="DEV_KEY"
@@ -110,15 +105,12 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets[env.SECRET_KEY] }}
-
       - name: Deploy Build to Server
         run: |
-          echo "Deploying to $ENV server at $HOST"
           scp -o StrictHostKeyChecking=no -r build/* ubuntu@$HOST:/home/ubuntu/build/
           ssh -o StrictHostKeyChecking=no ubuntu@$HOST << 'EOF'
             sudo apt update
             sudo apt install nginx -y
-            mkdir -p /home/ubuntu/build
             sudo rm -rf /var/www/html/*
             sudo cp -r /home/ubuntu/build/* /var/www/html/
             sudo systemctl restart nginx
