@@ -30,6 +30,11 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
+        
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
+        with:
+         version: v0.69.3
 
       - name: Run Trivy Scan
         run: |
