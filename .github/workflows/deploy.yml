@@ -58,6 +58,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: test
+    environment:
+        name: ${{ github.ref == 'refs/heads/dev' && 'dev' || 'prod' }}
     steps:
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
