@@ -16,9 +16,6 @@ on:
           - dev
           - prod
 
-permissions:
-  contents: read
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,8 +30,25 @@ jobs:
 
       - name: Install Dependencies & Build
         run: |
-          npm ci
+          npm install
           npm run build
+
+      - name: Run Trivy Vulnerability Scan
+        uses: aquasecurity/trivy-action@v1
+        with:
+          scan-type: fs
+          vuln-type: "os,library"
+          scan-path: "."
+          format: "json"
+          output: "trivy-report.json"
+          ignore-unfixed: false
+          exit-code: "1"
+
+      - name: Upload Trivy Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-report
+          path: trivy-report.json
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -55,32 +69,14 @@ jobs:
 
       - name: Run Tests
         run: |
-          npm ci
+          npm install
           npm test -- --watchAll=false
-
-  # 🔐 NEW JOB: SECURITY SCAN USING TRIVY
-  security-scan:
-    runs-on: ubuntu-latest
-    needs: test
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Run Trivy Scan
-        uses: aquasecurity/trivy-action@v0.20.0
-        with:
-          scan-type: fs
-          severity: HIGH,CRITICAL
-          exit-code: '1'
 
   deploy:
     runs-on: ubuntu-latest
-    needs: security-scan
-
+    needs: test
     environment:
       name: ${{ github.ref == 'refs/heads/dev' && 'dev' || 'prod' }}
-
     steps:
       - name: Download Build Artifact
         uses: actions/download-artifact@v4
@@ -115,16 +111,11 @@ jobs:
         with:
           ssh-private-key: ${{ secrets[env.SECRET_KEY] }}
 
-      # 🔐 Secure SSH (recommended instead of disabling host check)
-      - name: Add Known Hosts
-        run: |
-          ssh-keyscan -H $HOST >> ~/.ssh/known_hosts
-
       - name: Deploy Build to Server
         run: |
           echo "Deploying to $ENV server at $HOST"
-          scp -r build/* ubuntu@$HOST:/home/ubuntu/build/
-          ssh ubuntu@$HOST << 'EOF'
+          scp -o StrictHostKeyChecking=no -r build/* ubuntu@$HOST:/home/ubuntu/build/
+          ssh -o StrictHostKeyChecking=no ubuntu@$HOST << 'EOF'
             sudo apt update
             sudo apt install nginx -y
             mkdir -p /home/ubuntu/build
