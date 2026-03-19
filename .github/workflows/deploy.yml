@@ -35,6 +35,14 @@ jobs:
         uses: aquasecurity/setup-trivy@v0.2.3
         with:
           version: v0.69.3
+                
+      
+      - name: SonarQube Scan
+        uses: SonarSource/sonarcloud-github-action@v2
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Run Trivy Scan
         run: |
