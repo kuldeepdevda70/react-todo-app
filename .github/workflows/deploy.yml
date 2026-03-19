@@ -30,18 +30,20 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
+
+        
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
         env:
-         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-         projectBaseDir: .
-         args: >
-          -Dsonar.projectKey=kuldeepdevda70_react-todo-app         # <-- your Project Key
-          -Dsonar.organization=kuldeepdevda70      # <-- your Organization Key
-          -Dsonar.login=${{ secrets.SONAR_TOKEN }}  # <-- your token
-        
-                
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=kuldeepdevda70_react-todo-app
+            -Dsonar.organization=kuldeepdevda70
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+            -Dsonar.qualitygate.wait=true      
+                      
 
       - name: Run Trivy Scan
         run: |
