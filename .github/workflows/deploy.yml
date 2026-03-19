@@ -41,10 +41,11 @@ jobs:
           trivy fs . --format json --output trivy-report.json --exit-code 1 --severity HIGH,CRITICAL
 
       - name: Upload Trivy Report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-report
-          path: trivy-report.json
+         name: trivy-report
+         path: trivy-report.json
 
       - name: Build Project
         run: npm run build
