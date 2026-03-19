@@ -34,7 +34,7 @@ jobs:
           npm run build
 
       - name: Run Trivy Vulnerability Scan
-        uses: aquasecurity/trivy-action@v0.12.0
+        uses: aquasecurity/trivy-action@v0.33.0
         with:
           scan-type: fs
           vuln-type: "os,library"
