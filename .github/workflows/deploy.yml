@@ -37,8 +37,8 @@ jobs:
         with:
          projectBaseDir: .
          args: >
-          -Dsonar.projectKey=react-todo-app          # <-- your Project Key
-          -Dsonar.organization=kuldeepdevda70       # <-- your Organization Key
+          -Dsonar.projectKey=kuldeepdevda70_react-todo-app         # <-- your Project Key
+          -Dsonar.organization=kuldeepdevda70      # <-- your Organization Key
           -Dsonar.login=${{ secrets.SONAR_TOKEN }}  # <-- your token
         
                 
