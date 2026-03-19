@@ -58,7 +58,7 @@ jobs:
 
   sonarqube:
     runs-on: ubuntu-latest
-    needs: build  # <-- Make sure Sonar runs AFTER build
+    needs: build  # Make sure Sonar runs AFTER build
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,6 +67,12 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v6
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          projectBaseDir: .
+          args: >
+            -Dsonar.projectKey=kuldeepdevda70_react-todo-app
+            -Dsonar.organization=kuldeepdevda70
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
   test:
     runs-on: ubuntu-latest
