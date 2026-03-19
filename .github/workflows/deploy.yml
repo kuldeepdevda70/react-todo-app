@@ -37,8 +37,7 @@ jobs:
          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
          projectBaseDir: .
-         args: >
-          -Dsonar.login=${{ env.SONAR_TOKEN }}
+        
                 
 
       - name: Run Trivy Scan
