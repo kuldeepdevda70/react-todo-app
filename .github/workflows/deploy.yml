@@ -31,17 +31,14 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: SonarQube Scan
+      - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v2
+        env:
+         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
-          projectBaseDir: .
-          args: >
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
-      - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.3
-        with:
-          version: v0.69.3
+         projectBaseDir: .
+         args: >
+          -Dsonar.login=${{ env.SONAR_TOKEN }}
                 
 
       - name: Run Trivy Scan
