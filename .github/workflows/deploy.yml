@@ -45,22 +45,21 @@ jobs:
             -Dsonar.organization=kuldeepdevda70
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-      - name: Run Trivy Scan
-        uses: aquasecurity/trivy-action@main
+      - name: Install Trivy
+        uses: aquasecurity/setup-trivy@v0.2.3
         with:
-          scan-type: fs
-          scan-ref: .
-          format: json
-          output: trivy-report.json
-          severity: HIGH,CRITICAL
-      
+          version: v0.69.3
+
+      - name: Run Trivy Scan
+        run: trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL
+
       - name: Upload Trivy Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: trivy-report
           path: trivy-report.json
-      
+
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
