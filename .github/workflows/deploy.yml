@@ -45,7 +45,10 @@ jobs:
             -Dsonar.organization=kuldeepdevda70
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
-     
+      - name: Install Trivy
+        run: |
+          wget https://github.com/aquasecurity/trivy/releases/latest/download/trivy_0.69.3_Linux-64bit.deb
+          sudo dpkg -i trivy_0.69.3_Linux-64bit.deb
 
       - name: Run Trivy Scan
         run: trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL
