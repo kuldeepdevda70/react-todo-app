@@ -46,7 +46,7 @@ jobs:
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@v0.2.3
+        uses: aquasecurity/setup-trivy@v0
         with:
           version: v0.69.3
 
@@ -129,4 +129,3 @@ jobs:
             sudo systemctl restart nginx
           EOF
 
-          
