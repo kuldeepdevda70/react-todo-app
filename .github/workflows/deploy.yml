@@ -46,7 +46,7 @@ jobs:
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
 
       - name: Install Trivy
-        uses: aquasecurity/setup-trivy@master
+        uses: aquasecurity/setup-trivy@v0.2.0
       
       - name: Run Trivy Scan
         run: trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL
