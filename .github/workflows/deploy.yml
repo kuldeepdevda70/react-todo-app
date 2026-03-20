@@ -128,3 +128,5 @@ jobs:
             sudo cp -r /home/ubuntu/build/* /var/www/html/
             sudo systemctl restart nginx
           EOF
+
+          
