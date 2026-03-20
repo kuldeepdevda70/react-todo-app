@@ -44,6 +44,7 @@ jobs:
             -Dsonar.projectKey=kuldeepdevda70_react-todo-app
             -Dsonar.organization=kuldeepdevda70
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+           
 
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@v0.2.3
@@ -51,7 +52,7 @@ jobs:
           version: v0.69.3
 
       - name: Run Trivy Scan
-        run: trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL
+        run: trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL --exit-code 1
 
       - name: Upload Trivy Report
         if: always()
