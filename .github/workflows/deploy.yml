@@ -29,10 +29,7 @@ jobs:
           node-version: "18"
 
       - name: Install Dependencies
-        run: npm install
-
-      - name: Build Project
-        run: npm run build
+        run: npm install   
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
@@ -44,21 +41,25 @@ jobs:
             -Dsonar.projectKey=kuldeepdevda70_react-todo-app
             -Dsonar.organization=kuldeepdevda70
             -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-
+  
       - name: Install Trivy
         uses: aquasecurity/setup-trivy@v0
         with:
-          version: v0.69.3
+         version: v0.69.3                
 
       - name: Run Trivy Scan
-        run: trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL
+        run: |
+          trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL 
 
       - name: Upload Trivy Report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: trivy-report
-          path: trivy-report.json
+         name: trivy-report
+         path: trivy-report.json
+
+      - name: Build Project
+        run: npm run build
 
       - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
@@ -91,7 +92,6 @@ jobs:
         with:
           name: build-files
           path: build/
-
       - name: Determine Environment
         id: env
         run: |
@@ -117,7 +117,6 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets[env.SECRET_KEY] }}
-
       - name: Deploy Build to Server
         run: |
           scp -o StrictHostKeyChecking=no -r build/* ubuntu@$HOST:/home/ubuntu/build/
@@ -128,4 +127,7 @@ jobs:
             sudo cp -r /home/ubuntu/build/* /var/www/html/
             sudo systemctl restart nginx
           EOF
+<<<<<<< HEAD
 
+=======
+>>>>>>> parent of 831b340 (sonar)
