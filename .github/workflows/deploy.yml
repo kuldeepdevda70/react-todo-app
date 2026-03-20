@@ -51,7 +51,7 @@ jobs:
           sudo dpkg -i trivy_0.69.3_Linux-64bit.deb
 
       - name: Run Trivy Scan
-        run: trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL
+        run: trivy fs . --format json --output trivy-report.json --severity HIGH,CRITICAL --exit-code 1
 
       - name: Upload Trivy Report
         if: always()
