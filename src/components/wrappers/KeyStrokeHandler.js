@@ -1,29 +1,29 @@
-import React, {Component} from 'react';
-import {getNextModeByKey} from '../../services/mode';
-import {wrapChildrenWith} from '../../util/common';
+import React, { useEffect } from 'react';
+import { getNextModeByKey } from '../../services/mode';
+import { wrapChildrenWith } from '../../util/common';
 
-class KeyStrokeHandler extends Component {
-    componentWillMount() {
-        window.addEventListener('keydown', this.handleKeyUp.bind(this));
-    }
+const KeyStrokeHandler = ({ children, data, actions }) => {
+  useEffect(() => {
+    const handleKeyUp = (e) => {
+      const { mode } = data;
+      const nextMode = getNextModeByKey(mode, e.keyCode);
 
-    componentWillUnmount() {
-        window.removeEventListener('keydown', this.handleKeyUp);
-    }
+      if (nextMode !== mode) {
+        e.preventDefault();
+        actions.changeMode(nextMode);
+      }
+    };
 
-    handleKeyUp(e) {
-        const {mode} = this.props.data;
-        const nextMode = getNextModeByKey(mode, e.keyCode);
+    // Add event listener
+    window.addEventListener('keydown', handleKeyUp);
 
-        if (nextMode !== mode) {
-            e.preventDefault();
-            this.props.actions.changeMode(nextMode);
-        }
-    }
+    // Cleanup on unmount
+    return () => {
+      window.removeEventListener('keydown', handleKeyUp);
+    };
+  }, [data, actions]); // Re-run if data or actions change
 
-    render() {
-        return <div>{wrapChildrenWith(this.props.children, this.props)}</div>;
-    }
-}
+  return <div>{wrapChildrenWith(children, { data, actions })}</div>;
+};
 
 export default KeyStrokeHandler;
