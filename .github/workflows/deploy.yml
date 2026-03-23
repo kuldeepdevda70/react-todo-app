@@ -118,7 +118,7 @@ jobs:
 
   deploy:
     runs-on: ubuntu-latest
-    needs: [test, sonar, trivy]
+    needs: [approval_after_test, sonar, approval_before_artifact]
     environment:
       name: ${{ github.ref == 'refs/heads/dev' && 'dev' || 'prod' }}
     steps:
