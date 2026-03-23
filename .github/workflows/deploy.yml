@@ -96,6 +96,26 @@ jobs:
     steps:
       - run: echo "Waiting for approval after test..."
 
+  sonar:
+   runs-on: ubuntu-latest
+   needs: build
+   steps:
+     - uses: actions/checkout@v4
+ 
+     - name: SonarQube Scan
+       uses: SonarSource/sonarqube-scan-action@v6
+       continue-on-error: true                # <-- workflow continues even if quality is low
+       env:
+         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+       with:
+         projectBaseDir: .
+         args: >
+           -Dsonar.projectKey=kuldeepdevda70_react-todo-app
+           -Dsonar.organization=kuldeepdevda70
+           -Dsonar.login=${{ secrets.SONAR_TOKEN }}
+           -Dsonar.qualitygate.wait=true     # <-- wait for Quality Gate result
+      
+
   deploy:
     runs-on: ubuntu-latest
     needs: [test, sonar, trivy]
